@@ -1,0 +1,76 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: gha-using-templates-experiments
+  title: GHA Using Templates
+  description: Some Experiments With GHA Using Templates
+  tags:
+    - gha
+    - experiment
+    - templates
+spec:
+  owner: service@example.com
+  type: service
+
+  parameters:
+    - title: Provide some simple information
+      required:
+        - filename
+      properties:
+        filename:
+          title: File Name
+          type: string
+          description: Value To Name File
+
+        some_value:
+          title: Some Value
+          type: string
+          description: Some Value To Insert
+          default: value_placeholder
+
+    - title: Choose a location
+      required:
+        - repoUrl
+      properties:
+        repoUrl:
+          title: Repository Location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - github.com
+
+  steps:
+    - id: template
+      name: Fetch Skeleton + Template
+      action: fetch:template
+      input:
+        url: ./skeleton
+        copyWithoutTemplating:
+          - .github/workflows/*
+        values:
+          filename: ${{parameters.filename}}
+          some_value: ${{parameters.some_value}}
+
+    - id: publish
+      name: Publish
+      action: publish:github
+      input:
+        allowedHosts: ["github.com"]
+        description: This is ${{ parameters.filename }} repository
+        repoUrl: ${{ parameters.repoUrl }}
+
+    # - id: cicd
+    #   name: Dispatch Github Action Workflow
+    #   action: github:actions:dispatch
+    #   input:
+    #     repoUrl: ${{parameters.repoUrl}}
+    #     workflowId: demo1.yml
+    #     branchOrTagName: main
+
+    - id: register
+      name: Register
+      action: debug:log
+      input:
+        message: ${{ steps['publish'].output.remoteUrl }}
+
